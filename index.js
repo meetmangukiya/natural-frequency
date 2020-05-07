@@ -2,17 +2,31 @@ const orRegex = (array) => {
   return array.map((opt) => `(?:${opt})`).join("|");
 };
 
+const DURATIONS = {
+  MINUTE: "minute",
+  HOUR: "hour",
+  SECOND: "second",
+  DAY: "day"
+};
+
 const everyXDuration = (string) => {
-  const durations = ["minute", "hour", "second", "day"];
+  const durations = Object.values(DURATIONS);
   const durationRegex = `(?:(${orRegex(durations)})s?)`;
 
   const finalRe = new RegExp(`(?:every)\\s*(\\d+)?\\s*${durationRegex}`, "i");
 
   if (finalRe.test(string)) {
     const [full, number, duration] = finalRe.exec(string);
-    return { unit: duration.toLowerCase(), amount: parseFloat(number) };
+    return {
+      unit: duration.toLowerCase(),
+      amount: parseFloat(number),
+      day: undefined,
+      time: { hour: undefined, minute: undefined, amPm: undefined }
+    };
   } else return false;
 };
+
+const parseOrUndefined = (num) => (num ? parseInt(num) : undefined);
 
 const everyWeekdayAtX = (string) => {
   const days = [
@@ -22,7 +36,8 @@ const everyWeekdayAtX = (string) => {
     "wednesday",
     "thursday",
     "friday",
-    "saturday"
+    "saturday",
+    "day"
   ];
   const dayRegex = `(?:(${orRegex(days)})s?)`;
   const onAtRegex = orRegex(["on", "at"]);
@@ -44,9 +59,12 @@ const everyWeekdayAtX = (string) => {
       unit: "day",
       amount: 7,
       day: day.toLowerCase(),
-      time: { hour, minute, amPm: amPm ? amPm.toLowerCase() : amPm }
+      time: {
+        hour: parseOrUndefined(hour),
+        minute: parseOrUndefined(minute),
+        amPm: amPm ? amPm.toLowerCase() : amPm
+      }
     };
-    return { unit: duration.toLowerCase(), amount: parseFloat(number) };
   } else return false;
 };
 
@@ -59,4 +77,4 @@ const parse = (string) => {
   return false;
 };
 
-module.exports = parse;
+module.exports = { parse, DURATIONS };
